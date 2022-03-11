@@ -9,5 +9,8 @@
 $lls <path>
 ```
 
-### Sample:
-![sample.jpg](./sample.jpg)
+### Sample #1
+![sample.jpg](./samples/sample.jpg)
+
+### Sample #2
+![sample2.jpg](./samples/sample2.jpg)
