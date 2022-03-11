@@ -4,6 +4,10 @@
 
 ### I'm bored so, I made a clone for the tree command.
 
+### Usage:
 ```terminal
 $lls <path>
 ```
+
+### Sample:
+![sample.jpg](./sample.jpg)
