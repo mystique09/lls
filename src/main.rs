@@ -18,7 +18,6 @@ fn main() {
     }
 
     let pathh = flags.get(0).or(Some(&".".to_string())).unwrap().to_string();
-    println!("{}", pathh);
 
     let mut str_format = format!("{}", pathh);
 
