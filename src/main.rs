@@ -8,7 +8,7 @@ fn main() {
     let mut depth = 0;
     //let f_path = String::from("src/");
     let mut flags: Vec<String> = vec![];
-    for flag in args().into_iter() {
+    for flag in args() {
         flags.push(flag);
     }
     flags.remove(0);
@@ -19,7 +19,7 @@ fn main() {
 
     let pathh = flags.get(0).or(Some(&".".to_string())).unwrap().to_string();
 
-    let mut str_format = format!("{}", pathh);
+    let mut str_format = pathh.to_string();
 
     read_f(pathh, &mut str_format, &mut depth);
     println!("{}", str_format);
@@ -47,16 +47,10 @@ fn read_f(fpath: String, fstr: &mut String, depth: &mut usize) {
     }
 }
 
-fn format_f(
-    ftype: FileType,
-    fname: Cow<str>,
-    fstr: &mut String,
-    fpath: &String,
-    depth: &mut usize,
-) {
+fn format_f(ftype: FileType, fname: Cow<str>, fstr: &mut String, fpath: &str, depth: &mut usize) {
     if ftype.is_dir() {
         let mut inner_depth = *depth;
-        let mut inner_fstr = String::from(format!("\n{}└── {}", &" ".repeat(inner_depth), fname));
+        let mut inner_fstr = format!("\n{}└── {}", &" ".repeat(inner_depth), fname);
         read_f(
             format!("{}/{}", fpath, fname),
             &mut inner_fstr,
