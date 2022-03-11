@@ -1,8 +1,8 @@
-<h1 align="center">ls clone</h1>
+<h1 align="center">tree clone</h1>
 
-## ls clone using rust
+## tree clone using rust
 
-### I'm bored so, I made a clone for the ls command.
+### I'm bored so, I made a clone for the tree command.
 
 ```terminal
 $lls <path>
