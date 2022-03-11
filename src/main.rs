@@ -14,14 +14,20 @@ fn main() {
     flags.remove(0);
 
     if flags.len() > 1 {
-        panic!("Too much arguments.")
+        eprintln!("Too many arguments.");
+        return;
     }
 
-    let pathh = flags.get(0).or(Some(&".".to_string())).unwrap().to_string();
+    let command = flags.get(0).or(Some(&".".to_string())).unwrap().to_string();
 
-    let mut str_format = pathh.to_string();
+    if command == *"help" {
+        println!("Usage: lls <path>");
+        return;
+    }
 
-    read_f(pathh, &mut str_format, &mut depth);
+    let mut str_format = command.to_string();
+
+    read_f(command, &mut str_format, &mut depth);
     println!("{}", str_format);
 }
 
