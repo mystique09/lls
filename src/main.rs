@@ -1,15 +1,28 @@
 use std::{
     borrow::Cow,
+    env::args,
     fs::{read_dir, FileType},
 };
 
 fn main() {
-    //let mut str_format = format!("{}\n", );
     let mut depth = 0;
-    let f_path = String::from("src/");
-    let mut str_format = format!("{}\n", f_path);
-    //str_format.push_str(&" ----".repeat(depth)); //.push_str("└──");
-    read_f(f_path, &mut str_format, &mut depth);
+    //let f_path = String::from("src/");
+    let mut flags: Vec<String> = vec![];
+    for flag in args().into_iter() {
+        flags.push(flag);
+    }
+    flags.remove(0);
+
+    if flags.len() > 1 {
+        panic!("Too much arguments.")
+    }
+
+    let pathh = flags.get(0).or(Some(&".".to_string())).unwrap().to_string();
+    println!("{}", pathh);
+
+    let mut str_format = format!("{}", pathh);
+
+    read_f(pathh, &mut str_format, &mut depth);
     println!("{}", str_format);
 }
 
