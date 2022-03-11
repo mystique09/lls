@@ -27,8 +27,9 @@ fn main() {
 
     let mut str_format = command.to_string();
 
+    println!("\u{001b}[34m{}\u{001b}[0m", str_format);
     read_f(command, &mut str_format, &mut depth);
-    println!("{}", str_format);
+    //println!("{}", str_format);
 }
 
 fn read_f(fpath: String, fstr: &mut String, depth: &mut usize) {
@@ -53,21 +54,27 @@ fn read_f(fpath: String, fstr: &mut String, depth: &mut usize) {
     }
 }
 
-fn format_f(ftype: FileType, fname: Cow<str>, fstr: &mut String, fpath: &str, depth: &mut usize) {
+fn format_f(ftype: FileType, fname: Cow<str>, _fstr: &mut String, fpath: &str, depth: &mut usize) {
     if ftype.is_dir() {
         let mut inner_depth = *depth;
         let mut inner_fstr = format!(
-            "\n{}\u{001b}[34m└── {}\u{001b}[0m",
+            "{}\u{001b}[34m└── {}\u{001b}[0m",
             &" ".repeat(inner_depth),
             fname
         );
+
+        println!("{}", &inner_fstr.to_string());
         read_f(
             format!("{}/{}", fpath, fname),
             &mut inner_fstr,
             &mut inner_depth,
         );
-        fstr.push_str(&inner_fstr.to_string());
+        //fstr.push_str(&inner_fstr.to_string());
+
+        //println!("{}", &inner_fstr.to_string());
     } else if ftype.is_file() {
-        fstr.push_str(&format!("\n{}└── {}", &" ".repeat(*depth), fname).into_boxed_str());
+        // fstr.push_str(&format!("\n{}└── {}", &" ".repeat(*depth), fname).into_boxed_str());
+
+        println!("{}└── {}", &" ".repeat(*depth), fname);
     }
 }
