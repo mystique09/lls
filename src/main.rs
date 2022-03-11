@@ -6,7 +6,6 @@ use std::{
 
 fn main() {
     let mut depth = 0;
-    //let f_path = String::from("src/");
     let mut flags: Vec<String> = vec![];
     for flag in args() {
         flags.push(flag);
@@ -25,13 +24,13 @@ fn main() {
         return;
     }
 
-    let mut str_format = command.to_string();
+    let str_format = command.to_string();
 
-    read_f(command, &mut str_format, &mut depth);
-    println!("{}", str_format);
+    println!("\u{001b}[34m{}\u{001b}[0m", str_format);
+    read_f(command, &mut depth);
 }
 
-fn read_f(fpath: String, fstr: &mut String, depth: &mut usize) {
+fn read_f(fpath: String, depth: &mut usize) {
     let dirs = read_dir(&fpath);
     *depth += 1;
 
@@ -41,7 +40,7 @@ fn read_f(fpath: String, fstr: &mut String, depth: &mut usize) {
                 match folder {
                     Ok(ff) => match ff.file_type() {
                         Ok(ftype) => {
-                            format_f(ftype, ff.file_name().to_string_lossy(), fstr, &fpath, depth)
+                            format_f(ftype, ff.file_name().to_string_lossy(), &fpath, depth)
                         }
                         Err(why) => eprintln!("\u{001b}[31m{}\u{001b}[0m", why),
                     },
@@ -53,21 +52,18 @@ fn read_f(fpath: String, fstr: &mut String, depth: &mut usize) {
     }
 }
 
-fn format_f(ftype: FileType, fname: Cow<str>, fstr: &mut String, fpath: &str, depth: &mut usize) {
+fn format_f(ftype: FileType, fname: Cow<str>, fpath: &str, depth: &mut usize) {
     if ftype.is_dir() {
         let mut inner_depth = *depth;
-        let mut inner_fstr = format!(
-            "\n{}\u{001b}[34m└── {}\u{001b}[0m",
+        let inner_fstr = format!(
+            "{}\u{001b}[34m└── {}\u{001b}[0m",
             &" ".repeat(inner_depth),
             fname
         );
-        read_f(
-            format!("{}/{}", fpath, fname),
-            &mut inner_fstr,
-            &mut inner_depth,
-        );
-        fstr.push_str(&inner_fstr.to_string());
+
+        println!("{}", &inner_fstr);
+        read_f(format!("{}/{}", fpath, fname), &mut inner_depth);
     } else if ftype.is_file() {
-        fstr.push_str(&format!("\n{}└── {}", &" ".repeat(*depth), fname).into_boxed_str());
+        println!("{}└── {}", &" ".repeat(*depth), fname);
     }
 }
