@@ -14,14 +14,14 @@ fn main() {
     flags.remove(0);
 
     if flags.len() > 1 {
-        eprintln!("Too many arguments.");
+        eprintln!("\u{001b}[31mToo many arguments.\u{001b}[0m");
         return;
     }
 
     let command = flags.get(0).or(Some(&".".to_string())).unwrap().to_string();
 
     if command == *"help" {
-        println!("Usage: lls <path>");
+        println!("\u{001b}[32mUsage: lls <path>\u{001b}[0m");
         return;
     }
 
@@ -43,20 +43,24 @@ fn read_f(fpath: String, fstr: &mut String, depth: &mut usize) {
                         Ok(ftype) => {
                             format_f(ftype, ff.file_name().to_string_lossy(), fstr, &fpath, depth)
                         }
-                        Err(why) => println!("{}", why),
+                        Err(why) => eprintln!("\u{001b}[31m{}\u{001b}[0m", why),
                     },
-                    Err(why) => eprintln!("{}", why),
+                    Err(why) => eprintln!("\u{001b}[31m{}\u{001b}[0m", why),
                 }
             }
         }
-        Err(why) => println!("ERROR: ({})", why),
+        Err(why) => eprintln!("\u{001b}[31m{}\u{001b}[0m", why),
     }
 }
 
 fn format_f(ftype: FileType, fname: Cow<str>, fstr: &mut String, fpath: &str, depth: &mut usize) {
     if ftype.is_dir() {
         let mut inner_depth = *depth;
-        let mut inner_fstr = format!("\n{}└── {}", &" ".repeat(inner_depth), fname);
+        let mut inner_fstr = format!(
+            "\n{}\u{001b}[34m└── {}\u{001b}[0m",
+            &" ".repeat(inner_depth),
+            fname
+        );
         read_f(
             format!("{}/{}", fpath, fname),
             &mut inner_fstr,
