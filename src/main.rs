@@ -32,7 +32,7 @@ fn main() {
     println!("\u{001b}[34m{}\u{001b}[0m", str_format);
     read_f(command, &mut depth, &mut total_fs, &mut total_dirs);
 
-    println!("{} directorie(s), {} file(s)", total_dirs, total_fs);
+    println!("\n{} directories, {} file(s)", total_dirs, total_fs);
 }
 
 fn read_f(fpath: String, depth: &mut isize, tfs: &mut usize, tds: &mut usize) {
