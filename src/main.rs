@@ -5,7 +5,7 @@ use std::{
 };
 
 fn main() {
-    let mut depth = 0;
+    let mut depth: isize = -1;
     let mut flags: Vec<String> = vec![];
     for flag in args() {
         flags.push(flag);
@@ -35,7 +35,7 @@ fn main() {
     println!("{} directorie(s), {} file(s)", total_dirs, total_fs);
 }
 
-fn read_f(fpath: String, depth: &mut usize, tfs: &mut usize, tds: &mut usize) {
+fn read_f(fpath: String, depth: &mut isize, tfs: &mut usize, tds: &mut usize) {
     let dirs = read_dir(&fpath);
     *depth += 1;
 
@@ -66,7 +66,7 @@ fn format_f(
     ftype: FileType,
     fname: Cow<str>,
     fpath: &str,
-    depth: &mut usize,
+    depth: &mut isize,
     tfs: &mut usize,
     tds: &mut usize,
 ) {
@@ -75,7 +75,7 @@ fn format_f(
         let mut inner_depth = *depth;
         let inner_fstr = format!(
             "{}\u{001b}[34m└── {}\u{001b}[0m",
-            &" ".repeat(inner_depth),
+            &" ".repeat(inner_depth as usize),
             fname
         );
 
@@ -83,6 +83,6 @@ fn format_f(
         read_f(format!("{}/{}", fpath, fname), &mut inner_depth, tfs, tds);
     } else if ftype.is_file() {
         *tfs += 1;
-        println!("{}└── {}", &" ".repeat(*depth), fname);
+        println!("{}└── {}", &" ".repeat(*depth as usize), fname);
     }
 }
