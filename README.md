@@ -6,7 +6,11 @@
 
 ### Usage:
 ```terminal
-$lls <path>
+$ lls <option> <path>
+
+Option:
+  -a: include all hidden files and folders.
+  -h, --h: display this message
 ```
 
 ### Sample #1
