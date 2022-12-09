@@ -4,6 +4,8 @@
 
 ### I'm bored so, I made a clone for the tree command.
 
+[clap version](https://github.com/mystique09/lls-clap)
+
 ### Usage:
 ```terminal
 $ lls <option> <path>
