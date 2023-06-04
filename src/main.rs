@@ -48,7 +48,22 @@ fn main() {
     println!("\u{001b}[34m{}\u{001b}[0m", str_format);
     read_f(command, &mut depth, &mut total_fs, &mut total_dirs, all);
 
-    println!("{} directorie(s), {} file(s)", total_dirs, total_fs);
+    let res = match (total_dirs, total_fs) {
+        (d, f) if d > 1 && f > 1 => {
+            format!("{} directories, {} files", d, f)
+        }
+        (d, f) if d > 1 => {
+            format!("{} directories, {} file", d, f)
+        }
+        (d, f) if f > 1 => {
+            format!("{} directory, {} files", d, f)
+        }
+        (d, f) => {
+            format!("{} directory, {} file", d, f)
+        }
+    };
+
+    println!("{}", res.as_str());
 }
 
 fn read_f(fpath: String, depth: &mut usize, tfs: &mut usize, tds: &mut usize, all: bool) {
@@ -102,7 +117,7 @@ fn format_f(
         let mut inner_depth = *depth;
         let inner_fstr = format!(
             "{}\u{001b}[34m└── {}\u{001b}[0m",
-            &" ".repeat(inner_depth),
+            &" ".repeat(inner_depth * 2),
             fname
         );
 
@@ -121,6 +136,6 @@ fn format_f(
         }
 
         *tfs += 1;
-        println!("{}└── {}", &" ".repeat(*depth), fname);
+        println!("{}└── {}", &" ".repeat(*depth * 2), fname);
     }
 }
