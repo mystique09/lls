@@ -1,10 +1,17 @@
+use crate::flag::{get_flags, CommandFlag};
 use std::{fmt::Display, ops::Add, rc::Rc};
 
-const OUTPUT: &str = r#"
-{dirs} directories, {files} files
-"#;
-
-use crate::flag::{get_flags, CommandFlag};
+pub trait DataTrait {
+    fn incr_files(&mut self);
+    fn incr_dirs(&mut self);
+    fn incr_depth(&mut self);
+    fn set_flags(&mut self, flags: Rc<[CommandFlag]>);
+    fn is_help(&self) -> bool;
+    fn is_all(&self) -> bool;
+    fn is_file_only(&self) -> bool;
+    fn is_directory_only(&self) -> bool;
+    fn validate_flags(&self) -> Result<(), &Rc<str>>;
+}
 
 #[derive(Debug)]
 pub struct Data {
@@ -35,7 +42,9 @@ impl Data {
     fn dirs(&self) -> usize {
         self.dirs
     }
+}
 
+impl DataTrait for Data {
     fn incr_files(&mut self) {
         self.files = self.files.add(1);
     }
@@ -48,27 +57,27 @@ impl Data {
         self.depth = self.depth.add(1);
     }
 
-    pub fn set_flags(&mut self, flags: Rc<[CommandFlag]>) {
+    fn set_flags(&mut self, flags: Rc<[CommandFlag]>) {
         self.flags = flags;
     }
 
-    pub fn is_help(&self) -> bool {
-        self.flags.get(0).eq(&Some(&CommandFlag::Help))
+    fn is_help(&self) -> bool {
+        self.flags.first().eq(&Some(&CommandFlag::Help))
     }
 
-    pub fn is_all(&self) -> bool {
+    fn is_all(&self) -> bool {
         self.flags.contains(&CommandFlag::All)
     }
 
-    pub fn is_file_only(&self) -> bool {
+    fn is_file_only(&self) -> bool {
         self.flags.contains(&CommandFlag::FileOnly)
     }
 
-    pub fn is_directory_only(&self) -> bool {
+    fn is_directory_only(&self) -> bool {
         self.flags.contains(&CommandFlag::DirOnly)
     }
 
-    pub fn validate_flags(&self) -> Result<(), &Rc<str>> {
+    fn validate_flags(&self) -> Result<(), &Rc<str>> {
         for flag in self.flags.iter() {
             match flag {
                 CommandFlag::Unknown(f) => return Err(f),
