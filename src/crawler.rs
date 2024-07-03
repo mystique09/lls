@@ -33,9 +33,17 @@ where
     }
 
     pub fn crawl(&self) {
-        self.sender.send("hello".into()).unwrap();
-        self.sender.send("world".into()).unwrap();
-        self.sender.send("done".into()).unwrap();
+        if self.data().is_all() {
+            self.crawl_all();
+        }
+
+        if self.data.is_file_only() {
+            self.crawl_files();
+        }
+
+        if self.data().is_directory_only() {
+            self.crawl_dirs();
+        }
 
         while let Ok(data) = self.receiver.recv() {
             match data.as_ref() {
@@ -46,10 +54,25 @@ where
     }
 
     fn crawl_files(&self) {
-        todo!()
+        self.display("crawl files only".into());
+        self.done();
     }
 
     fn crawl_dirs(&self) {
-        todo!()
+        self.display("crawl directory only".into());
+        self.done();
+    }
+
+    fn crawl_all(&self) {
+        self.display("crawl all".into());
+        self.done();
+    }
+
+    fn display(&self, value: &str) {
+        self.sender.send(value.into()).unwrap();
+    }
+
+    fn done(&self) {
+        self.sender.send("done".into()).unwrap();
     }
 }
