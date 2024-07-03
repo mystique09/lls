@@ -3,8 +3,6 @@ use lls::{
     data::Data,
 };
 
-type Error = Box<dyn std::error::Error>;
-
 const HELP: &str = r#"Usage:
 lls <option> <path>
 
