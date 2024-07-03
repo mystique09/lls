@@ -17,12 +17,15 @@ fn main() {
 
     if data.is_help() {
         println!("{PURPLE}{}{RESET}", HELP);
+        return;
     }
 
     match data.validate_flags() {
         Ok(()) => {}
         Err(err) => {
             println!("{RED}Unknown flag: \"{err}\"{RESET}");
+            println!("{PURPLE}{}{RESET}", HELP);
+            return;
         }
     }
 
