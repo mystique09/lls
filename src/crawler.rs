@@ -1,6 +1,7 @@
 use crate::colors::{BLUE, PURPLE, RED, RESET};
 use std::{
     fs::read_dir,
+    os::windows::fs::FileTypeExt,
     sync::{mpsc::Sender, Arc, RwLock},
 };
 
@@ -45,14 +46,7 @@ impl Crawler {
                             let file_type = file.file_type().unwrap();
                             let mut inner = *depth;
 
-                            if file_type.is_file() {
-                                println!(
-                                    "{}{PURPLE}└── {}{RESET}",
-                                    " ".repeat(inner * 2),
-                                    file.file_name().to_str().unwrap()
-                                );
-                                self.sender.send(Some(CrawlData::Content)).unwrap();
-                            } else {
+                            if file_type.is_dir() || file_type.is_symlink_dir() {
                                 println!(
                                     "{}{BLUE}└── {}{RESET}",
                                     " ".repeat(inner),
@@ -65,16 +59,27 @@ impl Crawler {
                                     &mut inner,
                                 );
                             }
+
+                            match file.file_name().to_str() {
+                                Some(file_name) => println!(
+                                    "{}{PURPLE}└── {}{RESET}",
+                                    " ".repeat(inner * 2),
+                                    file_name
+                                ),
+                                None => {}
+                            }
+
+                            self.sender.send(Some(CrawlData::Content)).unwrap();
                         }
                         Err(e) => {
-                            eprintln!("{RED}{}{RESET}", e);
+                            eprintln!("{}{RED}{}{RESET}", "".repeat(*depth * 2), e);
                         }
                     }
                 }
             }
             Err(e) => match e.kind() {
                 std::io::ErrorKind::NotFound => println!("{RED}{}{RESET}", e),
-                _ => println!("{RED}{}{RESET}", e),
+                _ => eprintln!("{}{RED}{}{RESET}", "".repeat(*depth * 2), e),
             },
         }
 

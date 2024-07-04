@@ -38,6 +38,8 @@ fn main() {
         }
     }
 
+    let mut count = 0;
+
     while let Ok(content) = rx.recv() {
         match content {
             Some(found) => match found {
@@ -45,6 +47,8 @@ fn main() {
                     data.as_ref().write().unwrap().incr_files();
                 }
                 CrawlData::Dir => {
+                    count += 1;
+                    println!("count: {count}");
                     data.as_ref().write().unwrap().incr_dirs();
                 }
             },
