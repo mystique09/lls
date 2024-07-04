@@ -1,9 +1,9 @@
-use std::rc::Rc;
+use std::sync::{mpsc::channel, Arc, RwLock};
 
 use lls::{
     colors::{GREEN, PURPLE, RED, RESET},
-    crawler::Crawler,
-    data::{Data, DataTrait},
+    crawler::{CrawlData, Crawler},
+    data::Data,
 };
 
 const HELP: &str = r#"Usage:
@@ -16,16 +16,18 @@ lls <option> <path>
     --dir, -d: crawl only the directories."#;
 
 fn main() {
-    let data = Data::default();
-    let data = Rc::new(data);
-    let crawler = Crawler::new(Rc::clone(&data));
+    let (tx, rx) = channel::<Option<CrawlData>>();
 
-    if data.is_help() {
+    let data = Data::default();
+    let data = Arc::new(RwLock::new(data));
+    let crawler = Crawler::new(data.clone(), Arc::new(tx));
+
+    if data.as_ref().read().unwrap().is_help() {
         println!("{PURPLE}{}{RESET}", HELP);
         return;
     }
 
-    match data.validate_flags() {
+    match data.as_ref().read().unwrap().validate_args() {
         Ok(()) => {
             crawler.crawl();
         }
@@ -36,5 +38,20 @@ fn main() {
         }
     }
 
-    println!("{GREEN}{}{RESET}", data);
+    while let Ok(content) = rx.recv() {
+        match content {
+            Some(found) => match found {
+                CrawlData::Content => {
+                    data.as_ref().write().unwrap().incr_files();
+                }
+                CrawlData::Dir => {
+                    data.as_ref().write().unwrap().incr_dirs();
+                }
+            },
+            None => break,
+        }
+    }
+
+    let output = data.read().unwrap();
+    println!("{GREEN}{}{RESET}", output);
 }

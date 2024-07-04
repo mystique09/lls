@@ -1,78 +1,83 @@
+use crate::colors::{BLUE, PURPLE, RED, RESET};
 use std::{
-    rc::Rc,
-    sync::mpsc::{channel, Receiver, Sender},
+    fs::read_dir,
+    sync::{mpsc::Sender, Arc, RwLock},
 };
 
-use crate::data::DataTrait;
+use crate::data::Data;
 
-pub struct Crawler<T>
-where
-    T: DataTrait,
-{
-    data: Rc<T>,
-    receiver: Receiver<Rc<str>>,
-    sender: Sender<Rc<str>>,
+#[derive(Debug)]
+pub enum CrawlData {
+    Content,
+    Dir,
 }
 
-impl<T> Crawler<T>
-where
-    T: DataTrait,
-{
-    pub fn new(data: Rc<T>) -> Self {
-        let (tx, rx) = channel::<Rc<str>>();
+pub struct Crawler {
+    data: Arc<RwLock<Data>>,
+    sender: Arc<Sender<Option<CrawlData>>>,
+}
 
-        Self {
-            data,
-            sender: tx,
-            receiver: rx,
-        }
-    }
-
-    fn data(&self) -> Rc<T> {
-        self.data.clone()
+impl Crawler {
+    pub fn new(data: Arc<RwLock<Data>>, sender: Arc<Sender<Option<CrawlData>>>) -> Self {
+        Self { data, sender }
     }
 
     pub fn crawl(&self) {
-        if self.data().is_all() {
-            self.crawl_all();
-        }
+        let data = self.data.as_ref().read().unwrap();
+        let data_clone = Arc::clone(&self.data);
+        let path = data.get_path();
 
-        if self.data.is_file_only() {
-            self.crawl_files();
-        }
+        println!("{BLUE}{path}{RESET}");
+        self.crawl_content(path.as_str(), data_clone, &mut 0);
+    }
 
-        if self.data().is_directory_only() {
-            self.crawl_dirs();
-        }
+    fn crawl_content(&self, path: &str, data: Arc<RwLock<Data>>, depth: &mut usize) {
+        let dir_content = read_dir(path);
+        *depth = *depth + 1;
 
-        while let Ok(data) = self.receiver.recv() {
-            match data.as_ref() {
-                "done" => break,
-                _ => println!("{}", data),
+        match dir_content {
+            Ok(contents) => {
+                self.sender.send(Some(CrawlData::Dir)).unwrap();
+
+                for content in contents {
+                    match content {
+                        Ok(file) => {
+                            let file_type = file.file_type().unwrap();
+                            let mut inner = *depth;
+
+                            if file_type.is_file() {
+                                println!(
+                                    "{}{PURPLE}└── {}{RESET}",
+                                    " ".repeat(inner * 2),
+                                    file.file_name().to_str().unwrap()
+                                );
+                                self.sender.send(Some(CrawlData::Content)).unwrap();
+                            } else {
+                                println!(
+                                    "{}{BLUE}└── {}{RESET}",
+                                    " ".repeat(inner),
+                                    file.file_name().to_str().unwrap()
+                                );
+                                self.sender.send(Some(CrawlData::Dir)).unwrap();
+                                self.crawl_content(
+                                    file.path().as_path().to_str().unwrap(),
+                                    Arc::clone(&data),
+                                    &mut inner,
+                                );
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("{RED}{}{RESET}", e);
+                        }
+                    }
+                }
             }
+            Err(e) => match e.kind() {
+                std::io::ErrorKind::NotFound => println!("{RED}{}{RESET}", e),
+                _ => println!("{RED}{}{RESET}", e),
+            },
         }
-    }
 
-    fn crawl_files(&self) {
-        self.display("crawl files only".into());
-        self.done();
-    }
-
-    fn crawl_dirs(&self) {
-        self.display("crawl directory only".into());
-        self.done();
-    }
-
-    fn crawl_all(&self) {
-        self.display("crawl all".into());
-        self.done();
-    }
-
-    fn display(&self, value: &str) {
-        self.sender.send(value.into()).unwrap();
-    }
-
-    fn done(&self) {
-        self.sender.send("done".into()).unwrap();
+        self.sender.send(None).unwrap();
     }
 }

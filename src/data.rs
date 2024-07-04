@@ -1,86 +1,79 @@
-use crate::flag::{get_flags, CommandFlag};
-use std::{fmt::Display, ops::Add, rc::Rc};
-
-pub trait DataTrait {
-    fn incr_files(&mut self);
-    fn incr_dirs(&mut self);
-    fn incr_depth(&mut self);
-    fn set_flags(&mut self, flags: Rc<[CommandFlag]>);
-    fn is_help(&self) -> bool;
-    fn is_all(&self) -> bool;
-    fn is_file_only(&self) -> bool;
-    fn is_directory_only(&self) -> bool;
-    fn validate_flags(&self) -> Result<(), &Rc<str>>;
-}
+use crate::flag::{get_flags, Arg};
+use std::{fmt::Display, sync::Arc};
 
 #[derive(Debug)]
 pub struct Data {
-    flags: Rc<[CommandFlag]>,
-    depth: usize,
-    files: usize,
-    dirs: usize,
+    flags: Arc<[Arg]>,
+    pub files: usize,
+    pub dirs: usize,
 }
 
 impl Data {
-    pub fn new(flags: Rc<[CommandFlag]>) -> Self {
+    pub fn new(flags: Arc<[Arg]>) -> Self {
         Self {
             flags,
-            depth: 0,
             files: 0,
             dirs: 0,
         }
     }
 
-    fn depth(&self) -> usize {
-        self.depth
-    }
-
-    fn files(&self) -> usize {
+    pub fn files(&self) -> usize {
         self.files
     }
 
-    fn dirs(&self) -> usize {
+    pub fn dirs(&self) -> usize {
         self.dirs
     }
-}
 
-impl DataTrait for Data {
-    fn incr_files(&mut self) {
-        self.files = self.files.add(1);
+    pub fn get_path(&self) -> String {
+        let mut path = self.flags.iter().filter_map(|f| match f {
+            Arg::Path(p) => Some(p),
+            _ => None,
+        });
+
+        if let Some(path) = path.next() {
+            path.to_string_lossy().into_owned()
+        } else {
+            "".to_string()
+        }
     }
 
-    fn incr_dirs(&mut self) {
-        self.dirs = self.dirs.add(1);
+    pub fn flags(&self) -> Arc<[Arg]> {
+        self.flags.clone()
     }
 
-    fn incr_depth(&mut self) {
-        self.depth = self.depth.add(1);
+    pub fn incr_files(&mut self) {
+        self.files = self.files + 1;
     }
 
-    fn set_flags(&mut self, flags: Rc<[CommandFlag]>) {
+    pub fn incr_dirs(&mut self) {
+        self.dirs = self.dirs + 1;
+    }
+
+    pub fn set_flags(&mut self, flags: Arc<[Arg]>) {
         self.flags = flags;
     }
 
-    fn is_help(&self) -> bool {
-        self.flags.first().eq(&Some(&CommandFlag::Help))
+    pub fn is_help(&self) -> bool {
+        self.flags.first().eq(&Some(&Arg::Help))
     }
 
-    fn is_all(&self) -> bool {
-        self.flags.contains(&CommandFlag::All)
+    pub fn is_all(&self) -> bool {
+        self.flags.contains(&Arg::All)
     }
 
-    fn is_file_only(&self) -> bool {
-        self.flags.contains(&CommandFlag::FileOnly)
+    pub fn is_file_only(&self) -> bool {
+        self.flags.contains(&Arg::FileOnly)
     }
 
-    fn is_directory_only(&self) -> bool {
-        self.flags.contains(&CommandFlag::DirOnly)
+    pub fn is_directory_only(&self) -> bool {
+        self.flags.contains(&Arg::DirOnly)
     }
 
-    fn validate_flags(&self) -> Result<(), &Rc<str>> {
+    pub fn validate_args(&self) -> Result<(), Arc<str>> {
         for flag in self.flags.iter() {
             match flag {
-                CommandFlag::Unknown(f) => return Err(f),
+                Arg::Unknown(f) => return Err(f.clone()),
                 _ => continue,
             }
         }
