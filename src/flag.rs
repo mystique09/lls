@@ -6,6 +6,7 @@ pub enum Arg {
     All,
     FileOnly,
     DirOnly,
+    IncludeSymlinks,
     Path(PathBuf),
     Unknown(Arc<str>),
 }
@@ -17,6 +18,7 @@ impl From<Arc<str>> for Arg {
             "--all" | "-a" => Self::All,
             "--file" | "-f" => Self::FileOnly,
             "--dir" | "-d" => Self::DirOnly,
+            "--symlinks" | "-s" => Self::IncludeSymlinks,
             path if !path.contains('-') => Self::Path(PathBuf::from(value.as_ref())),
             _ => Self::Unknown(value),
         }
@@ -30,6 +32,7 @@ impl Display for Arg {
             Self::All => write!(f, "--all"),
             Self::FileOnly => write!(f, "--file"),
             Self::DirOnly => write!(f, "--dir"),
+            Self::IncludeSymlinks => write!(f, "--symlinks"),
             Self::Path(p) => write!(f, "{}", p.to_str().unwrap()),
             Self::Unknown(flag) => write!(f, "{}", flag),
         }

@@ -13,7 +13,8 @@ lls <option> <path>
     --all, -a: include hidden files and folders.
     --help, -h: prints this help message.
     --file, -f: crawl only the files.
-    --dir, -d: crawl only the directories."#;
+    --dir, -d: crawl only the directories.
+    --symlinks, -s: include symlinks."#;
 
 fn main() {
     let data = Data::default();

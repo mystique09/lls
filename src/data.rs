@@ -50,10 +50,6 @@ impl Data {
         self.dirs += 1;
     }
 
-    pub fn set_flags(&mut self, flags: Arc<[Arg]>) {
-        self.flags = flags;
-    }
-
     pub fn is_help(&self) -> bool {
         self.flags.first().eq(&Some(&Arg::Help))
     }
@@ -68,6 +64,10 @@ impl Data {
 
     pub fn is_directory_only(&self) -> bool {
         self.flags.contains(&Arg::DirOnly)
+    }
+
+    pub fn is_symlinks_included(&self) -> bool {
+        self.flags().contains(&Arg::IncludeSymlinks)
     }
 
     pub fn validate_args(&self) -> Result<(), Arc<str>> {

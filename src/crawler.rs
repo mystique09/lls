@@ -67,6 +67,8 @@ impl Crawler {
                                     || (file_type.is_dir() && data.read().unwrap().is_file_only())
                                     || (file_type.is_file()
                                         && data.read().unwrap().is_directory_only())
+                                    || ((file_type.is_symlink_file() || file_type.is_symlink_dir())
+                                        && !data.read().unwrap().is_symlinks_included())
                                 {
                                     continue;
                                 }
