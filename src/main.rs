@@ -1,141 +1,56 @@
-use std::{
-    borrow::Cow,
-    env::args,
-    fs::{read_dir, FileType},
+use std::sync::{Arc, RwLock};
+
+use lls::{
+    colors::{GREEN, PURPLE, RED, RESET},
+    crawler::{CrawlData, Crawler},
+    data::Data,
 };
 
+const HELP: &str = r#"Usage:
+lls <option> <path>
+
+[options]
+    --all, -a: include hidden files and folders.
+    --help, -h: prints this help message.
+    --file, -f: crawl only the files.
+    --dir, -d: crawl only the directories.
+    --symlinks, -s: include symlinks."#;
+
 fn main() {
-    let mut depth = 0;
-    let mut flags = args().collect::<Vec<_>>();
-    flags.remove(0);
+    let data = Data::default();
+    let data_arc = Arc::new(RwLock::new(data));
+    let crawler = Crawler::new(data_arc.clone());
+    let data_ref = data_arc.as_ref();
 
-    if flags.len() > 2 {
-        eprintln!("\u{001b}[31mToo many arguments.\u{001b}[0m");
+    if data_ref.read().unwrap().is_help() {
+        println!("{PURPLE}{}{RESET}", HELP);
         return;
     }
 
-    let command = flags.get(0).or(Some(&".".to_string())).unwrap().to_string();
-    let all = { command == "-a" || command == "--all" };
+    let validate = data_ref.read().unwrap().validate_args();
 
-    if command == *"--help" || command == *"-h" {
-        println!("\u{001b}[34mUsage: \n\tlls <option> <path> \n\nOption: \n\t-a: include hidden files and folders.\u{001b}[0m");
+    if let Err(err) = validate {
+        println!("{RED}Unknown flag: \"{err}\"{RESET}");
+        println!("{PURPLE}{}{RESET}", HELP);
         return;
     }
 
-    if flags.len() == 2 {
-        if !command.contains("-") {
-            eprintln!(
-                "\u{001b}[31mInvalid argument: {}\u{001b}[0m",
-                flags.get(1).unwrap()
-            );
-            return;
-        }
-    }
+    let rx = crawler.crawl();
 
-    let command = {
-        if all {
-            flags.get(1).or(Some(&".".to_string())).unwrap().to_string()
-        } else {
-            command
-        }
-    };
-
-    let str_format = command.to_string();
-
-    let mut total_dirs = 0;
-    let mut total_fs = 0;
-
-    println!("\u{001b}[34m{}\u{001b}[0m", str_format);
-    read_f(command, &mut depth, &mut total_fs, &mut total_dirs, all);
-
-    let res = match (total_dirs, total_fs) {
-        (d, f) if d > 1 && f > 1 => {
-            format!("{} directories, {} files", d, f)
-        }
-        (d, f) if d > 1 => {
-            format!("{} directories, {} file", d, f)
-        }
-        (d, f) if f > 1 => {
-            format!("{} directory, {} files", d, f)
-        }
-        (d, f) => {
-            format!("{} directory, {} file", d, f)
-        }
-    };
-
-    println!("{}", res.as_str());
-}
-
-fn read_f(fpath: String, depth: &mut usize, tfs: &mut usize, tds: &mut usize, all: bool) {
-    let dirs = read_dir(&fpath);
-    *depth += 1;
-
-    match dirs {
-        Ok(dir) => {
-            for folder in dir {
-                match folder {
-                    Ok(ff) => match ff.file_type() {
-                        Ok(ftype) => format_f(
-                            ftype,
-                            ff.file_name().to_string_lossy(),
-                            &fpath,
-                            depth,
-                            tfs,
-                            tds,
-                            all,
-                        ),
-                        Err(why) => eprintln!("\u{001b}[31m{}\u{001b}[0m", why),
-                    },
-                    Err(why) => eprintln!("\u{001b}[31m{}\u{001b}[0m", why),
+    while let Ok(content) = rx.recv() {
+        match content {
+            Some(found) => match found {
+                CrawlData::Content => {
+                    data_ref.write().unwrap().incr_files();
                 }
-            }
+                CrawlData::Dir => {
+                    data_ref.write().unwrap().incr_dirs();
+                }
+            },
+            None => break,
         }
-        Err(why) => eprintln!("\u{001b}[31m{}\u{001b}[0m", why),
     }
-}
 
-fn format_f(
-    ftype: FileType,
-    fname: Cow<str>,
-    fpath: &str,
-    depth: &mut usize,
-    tfs: &mut usize,
-    tds: &mut usize,
-    all: bool,
-) {
-    if ftype.is_dir() {
-        // return if the directory is hidden
-        if fname.starts_with(".") && !all {
-            return;
-        }
-
-        if fname.starts_with(".git") {
-            return;
-        }
-
-        *tds += 1;
-        let mut inner_depth = *depth;
-        let inner_fstr = format!(
-            "{}\u{001b}[34m└── {}\u{001b}[0m",
-            &" ".repeat(inner_depth * 2),
-            fname
-        );
-
-        println!("{}", &inner_fstr);
-        read_f(
-            format!("{}/{}", fpath, fname),
-            &mut inner_depth,
-            tfs,
-            tds,
-            all,
-        );
-    } else if ftype.is_file() {
-        // return if the file is hidden
-        if fname.starts_with(".") && !all {
-            return;
-        }
-
-        *tfs += 1;
-        println!("{}└── {}", &" ".repeat(*depth * 2), fname);
-    }
+    let output = data_ref.read().unwrap();
+    println!("{GREEN}{}{RESET}", output);
 }
