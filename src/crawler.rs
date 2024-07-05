@@ -62,30 +62,29 @@ impl Crawler {
                             let file_type = file.file_type().unwrap();
                             let mut inner = *depth;
 
-                            if file_type.is_dir() || file_type.is_symlink_dir() {
-                                println!(
-                                    "{}{BLUE}└── {}{RESET}",
-                                    " ".repeat(inner),
-                                    file.file_name().to_str().unwrap()
-                                );
-                                sender.as_ref().send(Some(CrawlData::Dir)).unwrap();
-                                Self::crawl_content(
-                                    Arc::clone(&sender),
-                                    file.path().as_path().to_str().unwrap(),
-                                    Arc::clone(&data),
-                                    &mut inner,
-                                );
-                            }
-
                             if let Some(file_name) = file.file_name().to_str() {
+                                if !data.read().unwrap().is_all() && file_name.starts_with(".") {
+                                    continue;
+                                }
                                 println!(
                                     "{}{PURPLE}└── {}{RESET}",
                                     " ".repeat(inner * 2),
                                     file_name
                                 );
-                            }
 
-                            sender.as_ref().send(Some(CrawlData::Content)).unwrap();
+                                if file_type.is_dir() || file_type.is_symlink_dir() {
+                                    println!("{}{BLUE}└── {}{RESET}", " ".repeat(inner), file_name);
+                                    sender.as_ref().send(Some(CrawlData::Dir)).unwrap();
+                                    Self::crawl_content(
+                                        Arc::clone(&sender),
+                                        file.path().as_path().to_str().unwrap(),
+                                        Arc::clone(&data),
+                                        &mut inner,
+                                    );
+                                }
+
+                                sender.as_ref().send(Some(CrawlData::Content)).unwrap();
+                            }
                         }
                         Err(e) => {
                             eprintln!("{}{RED}{}{RESET}", "".repeat(*depth * 2), e);
