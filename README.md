@@ -8,15 +8,13 @@
 
 ### Usage:
 ```terminal
-$ lls <option> <path>
+Usage:
+lls <option> <path>
 
-Option:
-  -a: include all hidden files and folders.
-  -h, --h: display this message
+[options]
+    --all, -a: include hidden files and folders.
+    --help, -h: prints this help message.
+    --file, -f: crawl only the files.
+    --dir, -d: crawl only the directories.
+    --symlinks, -s: include symlinks.
 ```
-
-### Sample #1
-![sample.jpg](./samples/sample.jpg)
-
-### Sample #2
-![sample2.jpg](./samples/sample2.jpg)
