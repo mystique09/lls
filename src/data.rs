@@ -34,7 +34,7 @@ impl Data {
         if let Some(path) = path.next() {
             path.to_string_lossy().into_owned()
         } else {
-            "".to_string()
+            ".".to_string()
         }
     }
 
