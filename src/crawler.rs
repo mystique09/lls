@@ -63,9 +63,14 @@ impl Crawler {
                             let mut inner = *depth;
 
                             if let Some(file_name) = file.file_name().to_str() {
-                                if !data.read().unwrap().is_all() && file_name.starts_with(".") {
+                                if (!data.read().unwrap().is_all() && file_name.starts_with("."))
+                                    || (file_type.is_dir() && data.read().unwrap().is_file_only())
+                                    || (file_type.is_file()
+                                        && data.read().unwrap().is_directory_only())
+                                {
                                     continue;
                                 }
+
                                 println!(
                                     "{}{PURPLE}└── {}{RESET}",
                                     " ".repeat(inner * 2),
