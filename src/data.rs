@@ -43,11 +43,11 @@ impl Data {
     }
 
     pub fn incr_files(&mut self) {
-        self.files = self.files + 1;
+        self.files += 1;
     }
 
     pub fn incr_dirs(&mut self) {
-        self.dirs = self.dirs + 1;
+        self.dirs += 1;
     }
 
     pub fn set_flags(&mut self, flags: Arc<[Arg]>) {

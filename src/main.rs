@@ -1,4 +1,4 @@
-use std::sync::{mpsc::channel, Arc, RwLock};
+use std::sync::{Arc, RwLock};
 
 use lls::{
     colors::{GREEN, PURPLE, RED, RESET},
@@ -16,46 +16,40 @@ lls <option> <path>
     --dir, -d: crawl only the directories."#;
 
 fn main() {
-    let (tx, rx) = channel::<Option<CrawlData>>();
-
     let data = Data::default();
-    let data = Arc::new(RwLock::new(data));
-    let crawler = Crawler::new(data.clone(), Arc::new(tx));
+    let data_arc = Arc::new(RwLock::new(data));
+    let crawler = Crawler::new(data_arc.clone());
+    let data_ref = data_arc.as_ref();
 
-    if data.as_ref().read().unwrap().is_help() {
+    if data_ref.read().unwrap().is_help() {
         println!("{PURPLE}{}{RESET}", HELP);
         return;
     }
 
-    match data.as_ref().read().unwrap().validate_args() {
-        Ok(()) => {
-            crawler.crawl();
-        }
-        Err(err) => {
-            println!("{RED}Unknown flag: \"{err}\"{RESET}");
-            println!("{PURPLE}{}{RESET}", HELP);
-            return;
-        }
+    let validate = data_ref.read().unwrap().validate_args();
+
+    if let Err(err) = validate {
+        println!("{RED}Unknown flag: \"{err}\"{RESET}");
+        println!("{PURPLE}{}{RESET}", HELP);
+        return;
     }
 
-    let mut count = 0;
+    let rx = crawler.crawl();
 
     while let Ok(content) = rx.recv() {
         match content {
             Some(found) => match found {
                 CrawlData::Content => {
-                    data.as_ref().write().unwrap().incr_files();
+                    data_ref.write().unwrap().incr_files();
                 }
                 CrawlData::Dir => {
-                    count += 1;
-                    println!("count: {count}");
-                    data.as_ref().write().unwrap().incr_dirs();
+                    data_ref.write().unwrap().incr_dirs();
                 }
             },
             None => break,
         }
     }
 
-    let output = data.read().unwrap();
+    let output = data_ref.read().unwrap();
     println!("{GREEN}{}{RESET}", output);
 }

@@ -2,7 +2,11 @@ use crate::colors::{BLUE, PURPLE, RED, RESET};
 use std::{
     fs::read_dir,
     os::windows::fs::FileTypeExt,
-    sync::{mpsc::Sender, Arc, RwLock},
+    sync::{
+        mpsc::{channel, Receiver, Sender},
+        Arc, RwLock,
+    },
+    thread,
 };
 
 use crate::data::Data;
@@ -15,30 +19,42 @@ pub enum CrawlData {
 
 pub struct Crawler {
     data: Arc<RwLock<Data>>,
-    sender: Arc<Sender<Option<CrawlData>>>,
 }
 
 impl Crawler {
-    pub fn new(data: Arc<RwLock<Data>>, sender: Arc<Sender<Option<CrawlData>>>) -> Self {
-        Self { data, sender }
+    pub fn new(data: Arc<RwLock<Data>>) -> Self {
+        Self { data }
     }
 
-    pub fn crawl(&self) {
+    pub fn crawl(&self) -> Receiver<Option<CrawlData>> {
         let data = self.data.as_ref().read().unwrap();
         let data_clone = Arc::clone(&self.data);
         let path = data.get_path();
+        let (tx, rx) = channel::<Option<CrawlData>>();
+        let arc_tx = Arc::new(tx);
 
         println!("{BLUE}{path}{RESET}");
-        self.crawl_content(path.as_str(), data_clone, &mut 0);
+
+        thread::spawn(move || {
+            Self::crawl_content(arc_tx, path.as_str(), data_clone, &mut 0);
+        });
+
+        rx
     }
 
-    fn crawl_content(&self, path: &str, data: Arc<RwLock<Data>>, depth: &mut usize) {
+    fn crawl_content(
+        sender: Arc<Sender<Option<CrawlData>>>,
+        path: &str,
+        data: Arc<RwLock<Data>>,
+        depth: &mut usize,
+    ) {
+        let sender = Arc::clone(&sender);
         let dir_content = read_dir(path);
-        *depth = *depth + 1;
+        *depth += 1;
 
         match dir_content {
             Ok(contents) => {
-                self.sender.send(Some(CrawlData::Dir)).unwrap();
+                sender.as_ref().send(Some(CrawlData::Dir)).unwrap();
 
                 for content in contents {
                     match content {
@@ -52,24 +68,24 @@ impl Crawler {
                                     " ".repeat(inner),
                                     file.file_name().to_str().unwrap()
                                 );
-                                self.sender.send(Some(CrawlData::Dir)).unwrap();
-                                self.crawl_content(
+                                sender.as_ref().send(Some(CrawlData::Dir)).unwrap();
+                                Self::crawl_content(
+                                    Arc::clone(&sender),
                                     file.path().as_path().to_str().unwrap(),
                                     Arc::clone(&data),
                                     &mut inner,
                                 );
                             }
 
-                            match file.file_name().to_str() {
-                                Some(file_name) => println!(
+                            if let Some(file_name) = file.file_name().to_str() {
+                                println!(
                                     "{}{PURPLE}└── {}{RESET}",
                                     " ".repeat(inner * 2),
                                     file_name
-                                ),
-                                None => {}
+                                );
                             }
 
-                            self.sender.send(Some(CrawlData::Content)).unwrap();
+                            sender.as_ref().send(Some(CrawlData::Content)).unwrap();
                         }
                         Err(e) => {
                             eprintln!("{}{RED}{}{RESET}", "".repeat(*depth * 2), e);
@@ -77,12 +93,7 @@ impl Crawler {
                     }
                 }
             }
-            Err(e) => match e.kind() {
-                std::io::ErrorKind::NotFound => println!("{RED}{}{RESET}", e),
-                _ => eprintln!("{}{RED}{}{RESET}", "".repeat(*depth * 2), e),
-            },
+            Err(e) => eprintln!("{}{RED}{}{RESET}", "".repeat(*depth * 2), e),
         }
-
-        self.sender.send(None).unwrap();
     }
 }
